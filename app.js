@@ -1,6 +1,6 @@
 // import the express module
 import express from "express";
-// import mongoose from "mongoose";
+// import mongoose from "mongoose";   //npm install mongoose
 import mongoose from "mongoose";
 
 // create app instance of express
@@ -43,7 +43,7 @@ app.get("/books", async (req, res, next) => {
 app.get("/books/:id", async (req, res, next) => {
   try {
     console.log("Fetching book with id:", req.params.id);
-    const bookId = req.params.id.toString();
+    const bookId = req.params.id;
     console.log("Converted book id to string:", typeof bookId, bookId);
     const book = await Book.findById(bookId); // fetch book by id from MongoDB
     if (!book) {
@@ -84,6 +84,44 @@ app.post("/books", async (req, res, next) => {
 });
 //   PUT /books/:id - update a book by id
 // DELETE /books/:id - delete a book by id
+
+// Query search   ///search?title=1984&author=Orwell  or /search?title=1984  or /search?author=Orwell
+app.get("/search", async (req, res, next) => {
+    try {
+        console.log("Search query title:", req.query);
+        const {title, author} = req.query;
+        
+        const books = await Book.find({ title: new RegExp(title, 'i'),
+            author: new RegExp(author, 'i')
+         });
+        res.json(books);
+    
+    } catch (err) {
+      next(err);
+    }
+});
+
+
+// Query search by title or author   ///searchbyAuthorOrtitle?title=1984  or /searchbyAuthorOrtitle?author=Orwell  or /searchbyAuthorOrtitle?title=1984&author=Orwell
+app.get("/searchbyAuthorOrtitle", async (req, res, next) => {
+    try {
+        console.log("Search query title:", req.query);
+        const {title, author} = req.query;
+        
+        const searchCondition = [];
+        if (title) {
+            searchCondition.push({ title: new RegExp(title, 'i') });
+        }
+        if (author) {
+            searchCondition.push({ author: new RegExp(author, 'i') });
+        }
+        const books = await Book.find({ $or: searchCondition });
+        res.json(books);
+    
+    } catch (err) {
+      next(err);
+    }
+});
 
 // 404 route not found middleware
 app.use((req, res, next) => {
